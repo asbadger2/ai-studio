@@ -204,43 +204,6 @@
     margin: 0 20px;
   }
 
-  /* ── API KEY ── */
-  .api-section {
-    padding: 14px 28px;
-    border-bottom: 1px solid var(--border);
-    background: #080810;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .api-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    white-space: nowrap;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-  }
-
-  .api-input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    border-radius: 3px;
-    outline: none;
-    transition: all 0.2s;
-  }
-  .api-input:focus {
-    border-color: var(--cyan);
-    box-shadow: 0 0 12px rgba(0,245,255,0.15);
-  }
-  .api-input::placeholder { color: #333; }
-
   .btn-cyan {
     background: transparent;
     border: 1px solid var(--cyan);
@@ -647,13 +610,6 @@
     >
   </div>
 
-  <!-- API KEY -->
-  <div class="api-section">
-    <span class="api-label">Replicate API Key</span>
-    <input type="password" class="api-input" id="apiKeyInput" placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-    <button class="btn-cyan" onclick="saveApiKey()">SAVE KEY</button>
-  </div>
-
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" id="tab-image" onclick="switchTab('image', this)">🖼 IMAGE GEN</button>
@@ -878,27 +834,17 @@
 </div>
 
 <script>
-let apiKey = localStorage.getItem('badger_replicate_key') || '';
+const apiKey = 'r8_cfavY203Ur6utsJ0Z9EDDsYib3TuY0q2Wn59r';
 let uploadedImageBase64 = null;
 let uploadedVidImageBase64 = null;
 
-if (apiKey) {
-  document.getElementById('apiKeyInput').value = apiKey;
-  setStatus(true);
-}
-
-function saveApiKey() {
-  apiKey = document.getElementById('apiKeyInput').value.trim();
-  if (!apiKey) return alert('Please enter your Replicate API key.');
-  localStorage.setItem('badger_replicate_key', apiKey);
-  setStatus(true);
-}
+window.addEventListener('DOMContentLoaded', () => setStatus(true));
 
 function setStatus(ready) {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   dot.className = 'status-dot' + (ready ? ' ready' : '');
-  text.textContent = ready ? 'READY' : 'NO KEY';
+  text.textContent = ready ? 'READY' : 'OFFLINE';
 }
 
 function switchTab(name, el) {
@@ -975,7 +921,7 @@ const VERSIONS = {
 async function callReplicate(modelKey, input, outputId, isVideo) {
   if (!apiKey) {
     const errId = outputId.replace('-output', '-error');
-    return showError(errId, 'Please enter and save your Replicate API key first.');
+    return showError(errId, 'Connection error. Please try again.');
   }
   try {
     const res = await fetch('https://api.replicate.com/v1/predictions', {
