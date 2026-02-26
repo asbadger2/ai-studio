@@ -1,4 +1,4 @@
-const API_KEY = 'r8_cfavY203Ur6utsJ0Z9EDDsYib3TuY0q2Wn59r';
+const API_KEY = 'r8_QLVQ0Nbc0zzM5xeOTjq0EgWl1z2UOX50IFMVS';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
