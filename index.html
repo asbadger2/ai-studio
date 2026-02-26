@@ -907,31 +907,36 @@ function downloadFile(url, filename) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// ─── HUGGING FACE API ───
+// ─── HUGGING FACE API (direct browser calls) ───
+const HF_TOKEN = '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';
 const HF_MODELS = {
-  'flux-schnell':  'black-forest-labs/FLUX.1-schnell',
-  'flux-dev':      'black-forest-labs/FLUX.1-dev',
-  'sdxl':          'stabilityai/stable-diffusion-xl-base-1.0',
-  'sd3':           'stabilityai/stable-diffusion-3-medium-diffusers',
+  'flux-schnell': 'black-forest-labs/FLUX.1-schnell',
+  'flux-dev':     'black-forest-labs/FLUX.1-dev',
+  'sdxl':         'stabilityai/stable-diffusion-xl-base-1.0',
+  'sd3':          'stabilityai/stable-diffusion-3-medium-diffusers',
+  'zeroscope':    'cerspense/zeroscope_v2_576w',
 };
 
-async async function callHuggingFace(modelKey, payload, outputId) {
+async function callHuggingFace(modelKey, payload, outputId) {
   const model = HF_MODELS[modelKey] || HF_MODELS['flux-schnell'];
   const url = `https://api-inference.huggingface.co/models/${model}`;
+  const isVideo = outputId.includes('vid');
   try {
     const s = document.getElementById('poll-status');
     if (s) s.textContent = 'SENDING TO HUGGING FACE...';
 
-    const res = await fetch('/.netlify/functions/hf', {
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, payload })
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      // Model loading — retry
-      if (err.error && err.error.includes('loading')) {
+      if (err.error && err.error.toLowerCase().includes('loading')) {
         if (s) s.textContent = 'MODEL LOADING, RETRYING IN 20s...';
         await new Promise(r => setTimeout(r, 20000));
         return callHuggingFace(modelKey, payload, outputId);
@@ -940,9 +945,10 @@ async async function callHuggingFace(modelKey, payload, outputId) {
     }
 
     const blob = await res.blob();
-    const imgUrl = URL.createObjectURL(blob);
-    showImage(outputId, imgUrl);
-    return imgUrl;
+    const objUrl = URL.createObjectURL(blob);
+    if (isVideo) showVideo(outputId, objUrl);
+    else showImage(outputId, objUrl);
+    return objUrl;
 
   } catch(e) {
     const errId = outputId.replace('-output', '-error');
