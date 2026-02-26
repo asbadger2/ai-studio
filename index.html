@@ -1,44 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Badger AI Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --surface: #0c0c12;
+    --surface2: #12121a;
+    --border: #1e1e2e;
+    --cyan: #00f5ff;
+    --magenta: #ff00e5;
+    --cyan-dim: rgba(0,245,255,0.15);
+    --magenta-dim: rgba(255,0,229,0.15);
+    --text: #e8e8f0;
+    --muted: #555570;
+    --success: #00ff99;
+  }
 
-BADGER AI STUDIO
-ALEXBADGER.ORG · POWERED BY STABLE DIFFUSION
-SD · FLUX · SVD
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-NO KEY
-NEURAL IMAGE · VIDEO · SYNTHESIS ENGINE
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,245,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,0,229,0.04) 0%, transparent 60%);
+  }
 
-￼
-🖼 IMAGE GEN
-🎬 VIDEO GEN
-✏️ IMG EDIT
-🎞 VID EDIT
-PROMPT
-NEGATIVE PROMPT
-MODEL
-          FLUX Schnell (Fast)
-          FLUX Dev (Quality)
-          SDXL 1.0
-          Stable Diffusion 3
-        
-Ultra-fast generation, great for iteration
-DIMENSIONS
-          1024×1024 Square
-          1344×768 Wide
-          768×1344 Portrait
-          1536×640 Ultrawide
-        
-SCHEDULER
-          DPM++ 2M
-          Euler
-          Euler Ancestral
-          DDIM
-        
-STEPS — 30
+  .widget {
+    width: 100%;
+    max-width: 900px;
+    background: var(--surface);
+    border: 1px solid #1e1e2e;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 
+      0 0 60px rgba(0,245,255,0.06),
+      0 0 120px rgba(255,0,229,0.04),
+      0 20px 80px rgba(0,0,0,0.8);
+  }
 
-GUIDANCE — 7.5
+  /* Corner accents */
+  .widget::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+    z-index: 20;
+  }
 
-GENERATE IMAGE
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 28px;
+    background: linear-gradient(135deg, #090912 0%, #0f0f1a 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
 
-🖼
-OUTPUT APPEARS HERE
-BADGER AI STUDIO · ALEXBADGER.ORG
-POWERED BY REPLICATE · STABLE DIFFUSION
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,0,229,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Badger logo SVG inline */
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(0,245,255,0.6)) drop-shadow(0 0 20px rgba(255,0,229,0.4));
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .logo-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    line-height: 1;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .neon-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    border-radius: 2px;
+    text-shadow: 0 0 8px var(--cyan);
+    box-shadow: 0 0 8px rgba(0,245,255,0.2), inset 0 0 8px rgba(0,245,255,0.05);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .status-dot.ready {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse-dot 2s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Decorative neon badger art strip */
+  .art-strip {
+    height: 80px;
+    background: linear-gradient(135deg, #080810 0%, #0a0a14 100%);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  .art-strip-img {
+    height: 120px;
+    width: auto;
+    object-fit: cover;
+    opacity: 0.35;
+    mix-blend-mode: screen;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    filter: hue-rotate(0deg) saturate(1.5);
+  }
+
+  .art-strip-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding-left: 28px;
+    z-index: 1;
+  }
+
+  .art-strip-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+    opacity: 0.3;
+    margin: 0 20px;
+  }
+
+  .btn-cyan {
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    padding: 8px 18px;
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    text-shadow: 0 0 8px var(--cyan);
+    box-shadow: 0 0 12px rgba(0,245,255,0.1);
+  }
+  .btn-cyan:hover {
+    background: rgba(0,245,255,0.1);
+    box-shadow: 0 0 20px rgba(0,245,255,0.3);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: #080810;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 13px 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+    background: rgba(0,245,255,0.03);
+    text-shadow: 0 0 12px rgba(0,245,255,0.5);
+  }
+  .tab.active.mag {
+    color: var(--magenta);
+    border-bottom-color: var(--magenta);
+    background: rgba(255,0,229,0.03);
+    text-shadow: 0 0 12px rgba(255,0,229,0.5);
+  }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 24px 28px; }
+  .panel.active { display: block; }
+
+  /* ── FIELDS ── */
+  .field { margin-bottom: 16px; }
+
+  .field-label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .field-label.cyan { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.4); }
+  .field-label.mag { color: var(--magenta); text-shadow: 0 0 8px rgba(255,0,229,0.4); }
+
+  .field-input, .field-select, .field-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 3px;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,245,255,0.1);
+  }
+  .field-textarea { resize: vertical; min-height: 80px; }
+  .field-select option { background: #0c0c12; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── RANGE ── */
+  .range-row { display: flex; align-items: center; gap: 10px; }
+  .field-range {
+    flex: 1;
+    -webkit-appearance: none;
+    background: var(--border);
+    height: 2px;
+    border-radius: 1px;
+    outline: none;
+  }
+  .field-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    background: var(--cyan);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  .range-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    width: 36px;
+    text-align: right;
+    text-shadow: 0 0 8px rgba(0,245,255,0.5);
+  }
+  .range-val.mag { color: var(--magenta); text-shadow: 0 0 8px rgba(255,0,229,0.5); }
+
+  /* ── UPLOAD ── */
+  .upload-zone {
+    border: 1px dashed #2a2a3e;
+    border-radius: 3px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface2);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--cyan);
+    background: rgba(0,245,255,0.03);
+    box-shadow: inset 0 0 20px rgba(0,245,255,0.05);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
+  .upload-text strong { color: var(--cyan); }
+  .upload-preview { max-width: 100%; max-height: 180px; margin-top: 12px; border-radius: 3px; }
+
+  /* ── GENERATE BUTTON ── */
+  .btn-generate {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(90deg, rgba(0,245,255,0.08), rgba(255,0,229,0.08));
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.25s;
+    margin-top: 8px;
+    text-shadow: 0 0 12px var(--cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.1), inset 0 0 20px rgba(0,245,255,0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-generate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+  .btn-generate:hover::before { transform: translateX(100%); }
+  .btn-generate:hover {
+    background: linear-gradient(90deg, rgba(0,245,255,0.15), rgba(255,0,229,0.15));
+    box-shadow: 0 0 40px rgba(0,245,255,0.2), 0 0 80px rgba(255,0,229,0.1);
+    transform: translateY(-1px);
+  }
+  .btn-generate:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-generate.mag {
+    border-color: var(--magenta);
+    color: var(--magenta);
+    text-shadow: 0 0 12px var(--magenta);
+    box-shadow: 0 0 20px rgba(255,0,229,0.1), inset 0 0 20px rgba(255,0,229,0.03);
+  }
+
+  /* ── OUTPUT ── */
+  .output-area {
+    margin-top: 20px;
+    min-height: 180px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .output-placeholder {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px;
+  }
+  .ph-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.2; }
+  .ph-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .output-img, .output-video {
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #080810;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-action {
+    flex: 1;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-action:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ── LOADING ── */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5,5,8,0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .loader-ring {
+    width: 52px; height: 52px;
+    position: relative;
+  }
+  .loader-ring::before, .loader-ring::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .loader-ring::before {
+    inset: 0;
+    border-top-color: var(--cyan);
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 12px var(--cyan);
+  }
+  .loader-ring::after {
+    inset: 6px;
+    border-top-color: var(--magenta);
+    animation: spin 0.7s linear infinite reverse;
+    box-shadow: 0 0 8px var(--magenta);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .loading-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── ERROR ── */
+  .error-msg {
+    background: rgba(255,0,229,0.07);
+    border: 1px solid rgba(255,0,229,0.25);
+    color: rgba(255,0,229,0.8);
+    padding: 10px 14px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+  }
+
+  .model-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  /* divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 20px 0;
+  }
+
+  @media (max-width: 580px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .api-section { flex-wrap: wrap; }
+    .logo-title { font-size: 16px; }
+    .tab { font-size: 8px; padding: 12px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="widget">
+
+  <!-- TOP GRADIENT LINE -->
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <!-- Inline SVG badger logo matching the neon cyan/magenta brand -->
+    <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Badger head silhouette stylized -->
+      <ellipse cx="50" cy="54" rx="36" ry="30" fill="#0a0a14"/>
+      <!-- Ears -->
+      <ellipse cx="24" cy="28" rx="10" ry="12" fill="#0a0a14" stroke="#00f5ff" stroke-width="1.5"/>
+      <ellipse cx="76" cy="28" rx="10" ry="12" fill="#0a0a14" stroke="#00f5ff" stroke-width="1.5"/>
+      <!-- Head outline cyan -->
+      <ellipse cx="50" cy="54" rx="36" ry="30" stroke="#00f5ff" stroke-width="1.8" 
+               filter="url(#cyan-glow)"/>
+      <!-- White stripe down center -->
+      <rect x="45" y="26" width="10" height="42" rx="5" fill="#00f5ff" opacity="0.15"/>
+      <!-- Magenta shadow stripes left -->
+      <ellipse cx="28" cy="56" rx="10" ry="20" fill="#ff00e5" opacity="0.12"/>
+      <!-- Eyes cyan -->
+      <circle cx="37" cy="50" r="4" fill="#00f5ff" opacity="0.9" filter="url(#cyan-glow)"/>
+      <circle cx="63" cy="50" r="4" fill="#00f5ff" opacity="0.9" filter="url(#cyan-glow)"/>
+      <!-- Nose magenta -->
+      <ellipse cx="50" cy="64" rx="5" ry="3.5" fill="#ff00e5" opacity="0.9"/>
+      <!-- Outer glow -->
+      <ellipse cx="50" cy="54" rx="36" ry="30" stroke="#ff00e5" stroke-width="0.5" opacity="0.4"/>
+      <defs>
+        <filter id="cyan-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="logo-text">
+      <div class="logo-title">BADGER AI STUDIO</div>
+      <div class="logo-sub">alexbadger.org · powered by stable diffusion</div>
+    </div>
+
+    <div class="header-right">
+      <div class="neon-badge">SD · FLUX · SVD</div>
+      <div class="status-pill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">NO KEY</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Art strip with uploaded neon badger graphic -->
+  <div class="art-strip">
+    <span class="art-strip-text">NEURAL IMAGE · VIDEO · SYNTHESIS ENGINE</span>
+    <div class="art-strip-line"></div>
+    <img 
+      src="https://47450040.fs1.hubspotusercontent-na1.net/hub/47450040/hubfs/Logos/AlexBadger.org%20Logos/Badger%20Logo%20DEFAULT%20400x400.png"
+      class="art-strip-img"
+      alt="Alex Badger Logo"
+      onerror="this.style.display='none'"
+    >
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tab-image" onclick="switchTab('image', this)">🖼 IMAGE GEN</button>
+    <button class="tab" id="tab-video" onclick="switchTab('video', this)">🎬 VIDEO GEN</button>
+    <button class="tab" id="tab-edit" onclick="switchTab('edit', this)">✏️ IMG EDIT</button>
+    <button class="tab" id="tab-vidEdit" onclick="switchTab('vidEdit', this)">🎞 VID EDIT</button>
+  </div>
+
+  <!-- ═══════════════ IMAGE GENERATION ═══════════════ -->
+  <div class="panel active" id="panel-image">
+    <div class="field">
+      <label class="field-label cyan">Prompt</label>
+      <textarea class="field-textarea" id="img-prompt" placeholder="A photorealistic badger in neon cyberpunk armor, cyan and magenta lighting, cinematic 8K..."></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Negative Prompt</label>
+      <textarea class="field-textarea" id="img-negative" placeholder="blurry, low quality, watermark, text, deformed..." style="min-height:50px;"></textarea>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label class="field-label">Model</label>
+        <select class="field-select" id="img-model" onchange="updateModelHint()">
+          <option value="flux-schnell">FLUX Schnell (Fast)</option>
+          <option value="flux-dev">FLUX Dev (Quality)</option>
+          <option value="sdxl">SDXL 1.0</option>
+          <option value="sd3">Stable Diffusion 3</option>
+        </select>
+        <div class="model-hint" id="img-model-hint">Ultra-fast generation, great for iteration</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Dimensions</label>
+        <select class="field-select" id="img-size">
+          <option value="1024x1024">1024×1024 Square</option>
+          <option value="1344x768">1344×768 Wide</option>
+          <option value="768x1344">768×1344 Portrait</option>
+          <option value="1536x640">1536×640 Ultrawide</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Scheduler</label>
+        <select class="field-select" id="img-scheduler">
+          <option value="DPMSolverMultistep">DPM++ 2M</option>
+          <option value="K_EULER">Euler</option>
+          <option value="K_EULER_ANCESTRAL">Euler Ancestral</option>
+          <option value="DDIM">DDIM</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Steps — <span id="steps-val" style="color:var(--cyan)">30</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="img-steps" min="10" max="50" value="30"
+                 oninput="document.getElementById('steps-val').textContent=this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Guidance — <span id="guidance-val" style="color:var(--cyan)">7.5</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="img-guidance" min="1" max="20" step="0.5" value="7.5"
+                 oninput="document.getElementById('guidance-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <button class="btn-generate" id="img-btn" onclick="generateImage()">GENERATE IMAGE</button>
+    <div id="img-error"></div>
+    <div class="output-area" id="img-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🖼</div>
+        <div class="ph-text">Output appears here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ VIDEO GENERATION ═══════════════ -->
+  <div class="panel" id="panel-video">
+    <div class="field">
+      <label class="field-label mag">Prompt</label>
+      <textarea class="field-textarea" id="vid-prompt" placeholder="Slow aerial pan over a neon-lit city, rain reflections, cinematic..."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Model</label>
+        <select class="field-select" id="vid-model">
+          <option value="svd">Stable Video Diffusion</option>
+          <option value="zeroscope">ZeroScope V2 XL</option>
+          <option value="animatediff">AnimateDiff</option>
+        </select>
+        <div class="model-hint">SVD: image-to-video · ZeroScope/AnimateDiff: text-to-video</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Frames</label>
+        <select class="field-select" id="vid-frames">
+          <option value="14">14 frames (~0.5s)</option>
+          <option value="25" selected>25 frames (~1s)</option>
+          <option value="50">50 frames (~2s)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">FPS — <span id="fps-val" style="color:var(--magenta)">8</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vid-fps" min="4" max="24" value="8"
+                 oninput="document.getElementById('fps-val').textContent=this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Motion — <span id="motion-val" style="color:var(--magenta)">127</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vid-motion" min="1" max="255" value="127"
+                 oninput="document.getElementById('motion-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Seed Image <span style="color:var(--muted)">(Required for SVD / Optional for others)</span></label>
+      <div class="upload-zone" id="vid-upload-zone">
+        <input type="file" accept="image/*" onchange="handleVidImageUpload(event)">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-text"><strong>Click or drag</strong> an image to animate</div>
+        <img id="vid-seed-preview" class="upload-preview" style="display:none">
+      </div>
+    </div>
+    <button class="btn-generate mag" id="vid-btn" onclick="generateVideo()">GENERATE VIDEO</button>
+    <div id="vid-error"></div>
+    <div class="output-area" id="vid-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🎬</div>
+        <div class="ph-text">Video output appears here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ IMAGE EDIT ═══════════════ -->
+  <div class="panel" id="panel-edit">
+    <div class="field">
+      <label class="field-label cyan">Upload Image to Edit</label>
+      <div class="upload-zone" id="edit-upload-zone">
+        <input type="file" accept="image/*" onchange="handleEditUpload(event)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text"><strong>Click or drag</strong> your image here</div>
+        <img id="edit-preview" class="upload-preview" style="display:none">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label cyan">Edit Prompt</label>
+      <textarea class="field-textarea" id="edit-prompt" placeholder="Make the sky more dramatic, add storm clouds and neon lightning..."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Edit Mode</label>
+        <select class="field-select" id="edit-mode">
+          <option value="img2img">Image-to-Image (style transfer)</option>
+          <option value="inpaint">Inpainting (fill areas)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Strength — <span id="strength-val" style="color:var(--cyan)">0.75</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="edit-strength" min="0.1" max="1" step="0.05" value="0.75"
+                 oninput="document.getElementById('strength-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <button class="btn-generate" id="edit-btn" onclick="editImage()">EDIT IMAGE</button>
+    <div id="edit-error"></div>
+    <div class="output-area" id="edit-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">✏️</div>
+        <div class="ph-text">Edited image appears here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ VIDEO EDIT ═══════════════ -->
+  <div class="panel" id="panel-vidEdit">
+    <div class="field">
+      <label class="field-label mag">Upload Video to Edit</label>
+      <div class="upload-zone" id="vedit-upload-zone">
+        <input type="file" accept="video/*" onchange="handleVideoEditUpload(event)">
+        <div class="upload-icon">🎞</div>
+        <div class="upload-text"><strong>Click or drag</strong> a video here</div>
+        <video id="vedit-preview" class="upload-preview" controls style="display:none"></video>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label mag">Style / Edit Prompt</label>
+      <textarea class="field-textarea" id="vedit-prompt" placeholder="Transform into neon anime style, vibrant cyan and magenta, cel shading..."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Style Model</label>
+        <select class="field-select" id="vedit-model">
+          <option value="animatediff">AnimateDiff Style Transfer</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Strength — <span id="vstrengh-val" style="color:var(--magenta)">0.6</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vedit-strength" min="0.1" max="1" step="0.05" value="0.6"
+                 oninput="document.getElementById('vstrengh-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <button class="btn-generate mag" id="vedit-btn" onclick="editVideo()">PROCESS VIDEO</button>
+    <div id="vedit-error"></div>
+    <div class="output-area" id="vedit-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🎞</div>
+        <div class="ph-text">Processed video appears here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="padding:12px 28px; border-top:1px solid var(--border); background:#080810; display:flex; align-items:center; justify-content:space-between;">
+    <span style="font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:1px;">BADGER AI STUDIO · ALEXBADGER.ORG</span>
+    <span style="font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:1px;">POWERED BY REPLICATE · STABLE DIFFUSION</span>
+  </div>
+
+</div>
+
+<script>
+const apiKey = 'r8_cfavY203Ur6utsJ0Z9EDDsYib3TuY0q2Wn59r';
+let uploadedImageBase64 = null;
+let uploadedVidImageBase64 = null;
+
+window.addEventListener('DOMContentLoaded', () => setStatus(true));
+
+function setStatus(ready) {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot' + (ready ? ' ready' : '');
+  text.textContent = ready ? 'READY' : 'OFFLINE';
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function updateModelHint() {
+  const hints = {
+    'flux-schnell': 'Ultra-fast generation, great for iteration',
+    'flux-dev': 'High fidelity, slower but more detailed',
+    'sdxl': 'Versatile, excellent photorealism',
+    'sd3': 'Latest architecture, improved composition',
+  };
+  const m = document.getElementById('img-model').value;
+  document.getElementById('img-model-hint').textContent = hints[m] || '';
+}
+
+function showLoading(outputId, msg) {
+  document.getElementById(outputId).innerHTML = `
+    <div class="loading-overlay">
+      <div class="loader-ring"></div>
+      <div class="loading-text">GENERATING</div>
+      <div class="loading-status" id="poll-status">${msg || 'SENDING REQUEST...'}</div>
+    </div>`;
+}
+
+function showError(errId, msg) {
+  document.getElementById(errId).innerHTML = `<div class="error-msg">⚠ ${msg}</div>`;
+}
+function clearError(id) { document.getElementById(id).innerHTML = ''; }
+
+function showImage(outputId, url) {
+  document.getElementById(outputId).innerHTML = `
+    <div style="width:100%">
+      <img src="${url}" class="output-img">
+      <div class="output-actions">
+        <button class="btn-action" onclick="downloadFile('${url}','output.png')">⬇ DOWNLOAD</button>
+        <button class="btn-action" onclick="navigator.clipboard.writeText('${url}').then(()=>alert('Copied!'))">📋 COPY URL</button>
+      </div>
+    </div>`;
+}
+
+function showVideo(outputId, url) {
+  document.getElementById(outputId).innerHTML = `
+    <div style="width:100%">
+      <video src="${url}" class="output-video" controls autoplay loop></video>
+      <div class="output-actions">
+        <button class="btn-action" onclick="downloadFile('${url}','output.mp4')">⬇ DOWNLOAD</button>
+        <button class="btn-action" onclick="navigator.clipboard.writeText('${url}').then(()=>alert('Copied!'))">📋 COPY URL</button>
+      </div>
+    </div>`;
+}
+
+function downloadFile(url, filename) {
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.target = '_blank';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ─── REPLICATE API ───
+const VERSIONS = {
+  'flux-schnell':  '5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637',
+  'flux-dev':      'a9758cbfbd5f3c2094457d996681af52552901b9c28e96f7dc81af9b6b71e24f',
+  'sdxl':          'da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf',
+  'sd3':           '527d2a6296facb8e47ba1eaf17f142c240c19a30894f437feee9b45b9898f9ce',
+  'svd':           '3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438',
+  'zeroscope':     '9f747673945c62801b13b84701c783929c0ee784e4748ec062204894dda1a351',
+  'animatediff':   'beecf59c4aee8d81bf04f0381033dfa10dc16e845b4ae00d281e2fa377e48a9f',
+};
+
+async function callReplicate(modelKey, input, outputId, isVideo) {
+  try {
+    const res = await fetch('/.netlify/functions/replicate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: '/predictions',
+        method: 'POST',
+        body: { version: VERSIONS[modelKey], input }
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `API Error ${res.status}`);
+    }
+    const pred = await res.json();
+    return await poll(pred.id, outputId, isVideo);
+  } catch(e) {
+    const errId = outputId.replace('-output', '-error');
+    showError(errId, e.message);
+    document.getElementById(outputId).innerHTML = `<div class="output-placeholder"><div class="ph-icon">⚠️</div><div class="ph-text">Generation failed</div></div>`;
+  }
+}
+
+async function poll(id, outputId, isVideo) {
+  for (let i = 0; i < 120; i++) {
+    await new Promise(r => setTimeout(r, 2500));
+    const res = await fetch('/.netlify/functions/replicate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: `/predictions/${id}`, method: 'GET' })
+    });
+    const data = await res.json();
+    const s = document.getElementById('poll-status');
+    if (s) s.textContent = `STATUS: ${data.status.toUpperCase()} · ${(i*2.5).toFixed(0)}s`;
+    if (data.status === 'succeeded') {
+      const out = Array.isArray(data.output) ? data.output[0] : data.output;
+      if (isVideo) showVideo(outputId, out);
+      else showImage(outputId, out);
+      return out;
+    }
+    if (data.status === 'failed') throw new Error(data.error || 'Generation failed');
+  }
+  throw new Error('Timeout');
+}
+
+// ─── GENERATE IMAGE ───
+async function generateImage() {
+  clearError('img-error');
+  const prompt = document.getElementById('img-prompt').value.trim();
+  if (!prompt) return showError('img-error', 'Please enter a prompt.');
+
+  const model = document.getElementById('img-model').value;
+  const [w, h] = document.getElementById('img-size').value.split('x').map(Number);
+  const steps = +document.getElementById('img-steps').value;
+  const guidance = +document.getElementById('img-guidance').value;
+  const negative = document.getElementById('img-negative').value;
+
+  document.getElementById('img-btn').disabled = true;
+  showLoading('img-output', 'INITIALIZING...');
+
+  let input = { prompt, width: w, height: h, num_inference_steps: steps, guidance_scale: guidance, num_outputs: 1 };
+  if (!model.includes('flux')) {
+    input.negative_prompt = negative;
+    input.scheduler = document.getElementById('img-scheduler').value;
+  }
+
+  await callReplicate(model, input, 'img-output', false);
+  document.getElementById('img-btn').disabled = false;
+}
+
+// ─── GENERATE VIDEO ───
+async function generateVideo() {
+  clearError('vid-error');
+  const prompt = document.getElementById('vid-prompt').value.trim();
+  const model = document.getElementById('vid-model').value;
+
+  if (model === 'svd' && !uploadedVidImageBase64) return showError('vid-error', 'Stable Video Diffusion requires a seed image. Please upload one.');
+  if (model !== 'svd' && !prompt) return showError('vid-error', 'Please enter a prompt.');
+
+  document.getElementById('vid-btn').disabled = true;
+  showLoading('vid-output', 'INITIALIZING VIDEO...');
+
+  let input = {
+    num_frames: +document.getElementById('vid-frames').value,
+    fps: +document.getElementById('vid-fps').value,
+    motion_bucket_id: +document.getElementById('vid-motion').value,
+  };
+
+  if (model === 'svd') {
+    input.input_image = `data:image/jpeg;base64,${uploadedVidImageBase64}`;
+  } else {
+    input.prompt = prompt;
+  }
+
+  await callReplicate(model, input, 'vid-output', true);
+  document.getElementById('vid-btn').disabled = false;
+}
+
+// ─── EDIT IMAGE ───
+async function editImage() {
+  clearError('edit-error');
+  if (!uploadedImageBase64) return showError('edit-error', 'Please upload an image first.');
+  const prompt = document.getElementById('edit-prompt').value.trim();
+  if (!prompt) return showError('edit-error', 'Please enter an edit prompt.');
+
+  document.getElementById('edit-btn').disabled = true;
+  showLoading('edit-output', 'PROCESSING IMAGE...');
+
+  const input = {
+    prompt,
+    image: `data:image/jpeg;base64,${uploadedImageBase64}`,
+    prompt_strength: +document.getElementById('edit-strength').value,
+    num_inference_steps: 30,
+    guidance_scale: 7.5,
+  };
+
+  await callReplicate('sdxl', input, 'edit-output', false);
+  document.getElementById('edit-btn').disabled = false;
+}
+
+// ─── EDIT VIDEO ───
+async function editVideo() {
+  clearError('vedit-error');
+  const prompt = document.getElementById('vedit-prompt').value.trim();
+  if (!prompt) return showError('vedit-error', 'Please enter a style prompt.');
+
+  document.getElementById('vedit-btn').disabled = true;
+  showLoading('vedit-output', 'PROCESSING VIDEO...');
+
+  const input = { prompt, num_frames: 16, fps: 8, num_inference_steps: 25 };
+  await callReplicate('animatediff', input, 'vedit-output', true);
+  document.getElementById('vedit-btn').disabled = false;
+}
+
+// ─── FILE UPLOADS ───
+function handleEditUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    uploadedImageBase64 = ev.target.result.split(',')[1];
+    const p = document.getElementById('edit-preview');
+    p.src = ev.target.result; p.style.display = 'block';
+    document.querySelector('#edit-upload-zone .upload-icon').style.display = 'none';
+    document.querySelector('#edit-upload-zone .upload-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleVidImageUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    uploadedVidImageBase64 = ev.target.result.split(',')[1];
+    const p = document.getElementById('vid-seed-preview');
+    p.src = ev.target.result; p.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleVideoEditUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const url = URL.createObjectURL(file);
+  const p = document.getElementById('vedit-preview');
+  p.src = url; p.style.display = 'block';
+  document.querySelector('#vedit-upload-zone .upload-icon').style.display = 'none';
+  document.querySelector('#vedit-upload-zone .upload-text').style.display = 'none';
+}
+
+// Drag-over effects
+document.querySelectorAll('.upload-zone').forEach(z => {
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+  z.addEventListener('drop', e => { e.preventDefault(); z.classList.remove('drag-over'); });
+});
+</script>
+</body>
+</html>
