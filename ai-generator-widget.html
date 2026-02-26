@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Studio – Image & Video Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface2: #18181c;
+    --border: #2a2a30;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4444;
+    --success: #47ff8a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 860px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Scanline effect */
+  .widget::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .api-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #0d0d0f;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .api-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
+  .api-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color: var(--accent); }
+  .api-input::placeholder { color: var(--muted); }
+
+  .api-save {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .api-save:hover { opacity: 0.85; }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(232, 255, 71, 0.03);
+  }
+
+  .tab-icon { margin-right: 6px; }
+
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+
+  .field { margin-bottom: 16px; }
+
+  .field-label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .field-input, .field-select, .field-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus { border-color: var(--accent); }
+  .field-textarea { resize: vertical; min-height: 80px; }
+  .field-select option { background: var(--surface2); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 2px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232, 255, 71, 0.03);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
+  .upload-text strong { color: var(--accent); }
+  .upload-preview { max-width: 100%; max-height: 200px; margin-top: 12px; border-radius: 2px; }
+
+  .btn-generate {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-generate:hover { background: #d4eb3c; transform: translateY(-1px); }
+  .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .output-area {
+    margin-top: 24px;
+    min-height: 200px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .output-placeholder {
+    text-align: center;
+    color: var(--muted);
+  }
+  .output-placeholder .ph-icon { font-size: 48px; margin-bottom: 8px; opacity: 0.3; }
+  .output-placeholder p { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; }
+
+  .output-img, .output-video {
+    width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,11,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .loader {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  .loading-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-action {
+    flex: 1;
+    padding: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+
+  .error-msg {
+    background: rgba(255,68,68,0.1);
+    border: 1px solid rgba(255,68,68,0.3);
+    color: #ff8080;
+    padding: 12px 16px;
+    border-radius: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    margin-top: 12px;
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .field-range {
+    flex: 1;
+    -webkit-appearance: none;
+    background: var(--border);
+    height: 2px;
+    border-radius: 1px;
+    outline: none;
+  }
+  .field-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .range-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    width: 36px;
+    text-align: right;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .status-dot.ready { background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+  .model-info {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 600px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .api-section { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <div class="header">
+    <div class="logo">AI <span>STUDIO</span></div>
+    <div class="badge">STABLE DIFFUSION</div>
+    <div style="margin-left:auto; display:flex; align-items:center; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted);">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">NO API KEY</span>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <span class="api-label">REPLICATE KEY</span>
+    <input type="password" class="api-input" id="apiKeyInput" placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+    <button class="api-save" onclick="saveApiKey()">SAVE KEY</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('image', this)">
+      <span class="tab-icon">🖼</span> IMAGE GEN
+    </button>
+    <button class="tab" onclick="switchTab('video', this)">
+      <span class="tab-icon">🎬</span> VIDEO GEN
+    </button>
+    <button class="tab" onclick="switchTab('edit', this)">
+      <span class="tab-icon">✏️</span> IMAGE EDIT
+    </button>
+    <button class="tab" onclick="switchTab('vidEdit', this)">
+      <span class="tab-icon">🎞</span> VIDEO EDIT
+    </button>
+  </div>
+
+  <!-- IMAGE GENERATION -->
+  <div class="panel active" id="panel-image">
+    <div class="field">
+      <label class="field-label">PROMPT</label>
+      <textarea class="field-textarea" id="img-prompt" placeholder="A photorealistic portrait of a cyberpunk samurai at dusk, cinematic lighting, 8K..."></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">NEGATIVE PROMPT</label>
+      <textarea class="field-textarea" id="img-negative" placeholder="blurry, low quality, watermark, text, deformed..." style="min-height:50px"></textarea>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label class="field-label">MODEL</label>
+        <select class="field-select" id="img-model">
+          <option value="stability-ai/sdxl">SDXL 1.0</option>
+          <option value="black-forest-labs/flux-schnell">FLUX Schnell</option>
+          <option value="black-forest-labs/flux-dev">FLUX Dev</option>
+          <option value="stability-ai/stable-diffusion-3">SD 3.0</option>
+        </select>
+        <div class="model-info" id="img-model-info">High quality, versatile image generation</div>
+      </div>
+      <div class="field">
+        <label class="field-label">DIMENSIONS</label>
+        <select class="field-select" id="img-size">
+          <option value="1024x1024">1024×1024 (Square)</option>
+          <option value="1344x768">1344×768 (Wide)</option>
+          <option value="768x1344">768×1344 (Portrait)</option>
+          <option value="1536x640">1536×640 (Ultrawide)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">SCHEDULER</label>
+        <select class="field-select" id="img-scheduler">
+          <option value="DPMSolverMultistep">DPM++ 2M</option>
+          <option value="DDIM">DDIM</option>
+          <option value="K_EULER">Euler</option>
+          <option value="K_EULER_ANCESTRAL">Euler A</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">STEPS — <span id="steps-val">30</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="img-steps" min="10" max="50" value="30" oninput="document.getElementById('steps-val').textContent=this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">GUIDANCE — <span id="guidance-val">7.5</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="img-guidance" min="1" max="20" step="0.5" value="7.5" oninput="document.getElementById('guidance-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <button class="btn-generate" id="img-btn" onclick="generateImage()">GENERATE IMAGE</button>
+    <div id="img-error"></div>
+    <div class="output-area" id="img-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🖼</div>
+        <p>OUTPUT WILL APPEAR HERE</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEO GENERATION -->
+  <div class="panel" id="panel-video">
+    <div class="field">
+      <label class="field-label">PROMPT</label>
+      <textarea class="field-textarea" id="vid-prompt" placeholder="Aerial drone shot of a neon-lit city at night, slow pan, cinematic..."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">MODEL</label>
+        <select class="field-select" id="vid-model">
+          <option value="stability-ai/stable-video-diffusion">Stable Video Diffusion</option>
+          <option value="anotherjesse/zeroscope-v2-xl">ZeroScope V2 XL</option>
+          <option value="lucataco/animate-diff">AnimateDiff</option>
+        </select>
+        <div class="model-info">Text-to-video generation</div>
+      </div>
+      <div class="field">
+        <label class="field-label">DURATION (FRAMES)</label>
+        <select class="field-select" id="vid-frames">
+          <option value="14">14 frames (~0.5s)</option>
+          <option value="25" selected>25 frames (~1s)</option>
+          <option value="50">50 frames (~2s)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">FPS — <span id="fps-val">8</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vid-fps" min="4" max="24" value="8" oninput="document.getElementById('fps-val').textContent=this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">MOTION STRENGTH — <span id="motion-val">127</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vid-motion" min="1" max="255" value="127" oninput="document.getElementById('motion-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">SEED IMAGE (optional – use for SVD)</label>
+      <div class="upload-zone" id="vid-upload-zone">
+        <input type="file" accept="image/*" onchange="handleVidImageUpload(event)">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-text"><strong>Click or drag</strong> an image to animate</div>
+        <img id="vid-seed-preview" class="upload-preview" style="display:none">
+      </div>
+    </div>
+    <button class="btn-generate" id="vid-btn" onclick="generateVideo()">GENERATE VIDEO</button>
+    <div id="vid-error"></div>
+    <div class="output-area" id="vid-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🎬</div>
+        <p>VIDEO OUTPUT WILL APPEAR HERE</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE EDIT -->
+  <div class="panel" id="panel-edit">
+    <div class="field">
+      <label class="field-label">UPLOAD IMAGE TO EDIT</label>
+      <div class="upload-zone" id="edit-upload-zone">
+        <input type="file" accept="image/*" onchange="handleEditUpload(event)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text"><strong>Click or drag</strong> an image here</div>
+        <img id="edit-preview" class="upload-preview" style="display:none">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">EDIT PROMPT</label>
+      <textarea class="field-textarea" id="edit-prompt" placeholder="Make the sky more dramatic and add storm clouds..."></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">EDIT MODE</label>
+      <select class="field-select" id="edit-mode">
+        <option value="img2img">Image-to-Image (style transfer)</option>
+        <option value="inpaint">Inpainting (fill/replace areas)</option>
+        <option value="controlnet">ControlNet (guided edit)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">STRENGTH — <span id="strength-val">0.75</span></label>
+      <div class="range-row">
+        <input type="range" class="field-range" id="edit-strength" min="0.1" max="1" step="0.05" value="0.75" oninput="document.getElementById('strength-val').textContent=this.value">
+      </div>
+    </div>
+    <button class="btn-generate" id="edit-btn" onclick="editImage()">EDIT IMAGE</button>
+    <div id="edit-error"></div>
+    <div class="output-area" id="edit-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">✏️</div>
+        <p>EDITED IMAGE WILL APPEAR HERE</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEO EDIT -->
+  <div class="panel" id="panel-vidEdit">
+    <div class="field">
+      <label class="field-label">UPLOAD VIDEO TO EDIT</label>
+      <div class="upload-zone" id="vedit-upload-zone">
+        <input type="file" accept="video/*" onchange="handleVideoEditUpload(event)">
+        <div class="upload-icon">🎞</div>
+        <div class="upload-text"><strong>Click or drag</strong> a video here</div>
+        <video id="vedit-preview" class="upload-preview" controls style="display:none"></video>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">EDIT STYLE / PROMPT</label>
+      <textarea class="field-textarea" id="vedit-prompt" placeholder="Transform into anime style, vibrant colors, cel shading..."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">STYLE MODEL</label>
+        <select class="field-select" id="vedit-model">
+          <option value="lucataco/animate-diff">AnimateDiff Style Transfer</option>
+          <option value="deforum">Deforum SD</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">STRENGTH — <span id="vstrengh-val">0.6</span></label>
+        <div class="range-row">
+          <input type="range" class="field-range" id="vedit-strength" min="0.1" max="1" step="0.05" value="0.6" oninput="document.getElementById('vstrengh-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <button class="btn-generate" id="vedit-btn" onclick="editVideo()">PROCESS VIDEO</button>
+    <div id="vedit-error"></div>
+    <div class="output-area" id="vedit-output">
+      <div class="output-placeholder">
+        <div class="ph-icon">🎞</div>
+        <p>PROCESSED VIDEO WILL APPEAR HERE</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let apiKey = localStorage.getItem('replicate_api_key') || '';
+let uploadedImageBase64 = null;
+let uploadedVidImageBase64 = null;
+let uploadedVideoFile = null;
+
+// Init
+if (apiKey) {
+  document.getElementById('apiKeyInput').value = apiKey;
+  setStatus(true);
+}
+
+function saveApiKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) return alert('Please enter your Replicate API key.');
+  localStorage.setItem('replicate_api_key', apiKey);
+  setStatus(true);
+}
+
+function setStatus(ready) {
+  document.getElementById('statusDot').className = 'status-dot' + (ready ? ' ready' : '');
+  document.getElementById('statusText').textContent = ready ? 'READY' : 'NO API KEY';
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function showLoading(outputId, msg) {
+  const el = document.getElementById(outputId);
+  el.innerHTML = `<div class="loading-overlay">
+    <div class="loader"></div>
+    <div class="loading-text">GENERATING...</div>
+    <div class="loading-status" id="poll-status">${msg || 'SENDING REQUEST'}</div>
+  </div>`;
+}
+
+function showError(errId, msg) {
+  document.getElementById(errId).innerHTML = `<div class="error-msg">⚠ ${msg}</div>`;
+}
+
+function clearError(errId) {
+  document.getElementById(errId).innerHTML = '';
+}
+
+function showImage(outputId, url) {
+  document.getElementById(outputId).innerHTML = `
+    <div style="width:100%">
+      <img src="${url}" class="output-img" onerror="this.alt='Failed to load image'">
+      <div class="output-actions">
+        <button class="btn-action" onclick="downloadFile('${url}', 'output.png')">⬇ DOWNLOAD</button>
+        <button class="btn-action" onclick="copyToClipboard('${url}')">📋 COPY URL</button>
+      </div>
+    </div>`;
+}
+
+function showVideo(outputId, url) {
+  document.getElementById(outputId).innerHTML = `
+    <div style="width:100%">
+      <video src="${url}" class="output-video" controls autoplay loop></video>
+      <div class="output-actions">
+        <button class="btn-action" onclick="downloadFile('${url}', 'output.mp4')">⬇ DOWNLOAD</button>
+        <button class="btn-action" onclick="copyToClipboard('${url}')">📋 COPY URL</button>
+      </div>
+    </div>`;
+}
+
+function downloadFile(url, filename) {
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.target = '_blank';
+  a.click();
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => alert('URL copied!'));
+}
+
+// ============ REPLICATE API ============
+async function runReplicate(model, input, outputId, isVideo) {
+  if (!apiKey) return showError(outputId.replace('output', 'error'), 'Please enter and save your Replicate API key first.');
+
+  try {
+    // Create prediction
+    const res = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ version: model, input })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `API Error ${res.status}`);
+    }
+
+    const prediction = await res.json();
+    return await pollPrediction(prediction.id, outputId, isVideo);
+
+  } catch (e) {
+    showError(outputId.replace('-output','') + '-error', e.message);
+    document.getElementById(outputId).innerHTML = `<div class="output-placeholder"><div class="ph-icon">⚠️</div><p>GENERATION FAILED</p></div>`;
+  }
+}
+
+async function pollPrediction(id, outputId, isVideo) {
+  const maxAttempts = 120;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 2500));
+    
+    const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    const data = await res.json();
+
+    const statusEl = document.getElementById('poll-status');
+    if (statusEl) statusEl.textContent = `STATUS: ${data.status.toUpperCase()} (${i * 2.5}s)`;
+
+    if (data.status === 'succeeded') {
+      const output = Array.isArray(data.output) ? data.output[0] : data.output;
+      if (isVideo) showVideo(outputId, output);
+      else showImage(outputId, output);
+      return output;
+    }
+    if (data.status === 'failed') {
+      throw new Error(data.error || 'Generation failed');
+    }
+  }
+  throw new Error('Timeout: generation took too long');
+}
+
+// Model version IDs (pinned stable versions)
+const MODEL_VERSIONS = {
+  'stability-ai/sdxl': 'da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf',
+  'black-forest-labs/flux-schnell': '5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637',
+  'black-forest-labs/flux-dev': 'a9758cbfbd5f3c2094457d996681af52552901b9c28e96f7dc81af9b6b71e24f',
+  'stability-ai/stable-video-diffusion': '3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438',
+  'anotherjesse/zeroscope-v2-xl': '9f747673945c62801b13b84701c783929c0ee784e4748ec062204894dda1a351',
+  'lucataco/animate-diff': 'beecf59c4aee8d81bf04f0381033dfa10dc16e845b4ae00d281e2fa377e48a9f',
+};
+
+// ============ GENERATE IMAGE ============
+async function generateImage() {
+  clearError('img-error');
+  const prompt = document.getElementById('img-prompt').value.trim();
+  if (!prompt) return showError('img-error', 'Please enter a prompt.');
+
+  const model = document.getElementById('img-model').value;
+  const size = document.getElementById('img-size').value.split('x');
+  const steps = parseInt(document.getElementById('img-steps').value);
+  const guidance = parseFloat(document.getElementById('img-guidance').value);
+  const negative = document.getElementById('img-negative').value;
+  const scheduler = document.getElementById('img-scheduler').value;
+
+  document.getElementById('img-btn').disabled = true;
+  showLoading('img-output', 'INITIALIZING');
+
+  const input = {
+    prompt,
+    negative_prompt: negative,
+    num_inference_steps: steps,
+    guidance_scale: guidance,
+    width: parseInt(size[0]),
+    height: parseInt(size[1]),
+    scheduler,
+    num_outputs: 1,
+  };
+
+  // FLUX models use different param names
+  if (model.includes('flux')) {
+    delete input.negative_prompt;
+    delete input.scheduler;
+    input.num_inference_steps = steps;
+  }
+
+  await runReplicate(MODEL_VERSIONS[model] || model, input, 'img-output', false);
+  document.getElementById('img-btn').disabled = false;
+}
+
+// ============ GENERATE VIDEO ============
+async function generateVideo() {
+  clearError('vid-error');
+  const prompt = document.getElementById('vid-prompt').value.trim();
+  if (!prompt && !uploadedVidImageBase64) return showError('vid-error', 'Please enter a prompt or upload a seed image.');
+
+  const model = document.getElementById('vid-model').value;
+  document.getElementById('vid-btn').disabled = true;
+  showLoading('vid-output', 'INITIALIZING VIDEO GEN');
+
+  let input = {
+    prompt,
+    num_frames: parseInt(document.getElementById('vid-frames').value),
+    fps: parseInt(document.getElementById('vid-fps').value),
+    motion_bucket_id: parseInt(document.getElementById('vid-motion').value),
+  };
+
+  if (model === 'stability-ai/stable-video-diffusion' && uploadedVidImageBase64) {
+    input = {
+      input_image: `data:image/jpeg;base64,${uploadedVidImageBase64}`,
+      num_frames: input.num_frames,
+      fps: input.fps,
+      motion_bucket_id: input.motion_bucket_id,
+    };
+    delete input.prompt;
+  }
+
+  await runReplicate(MODEL_VERSIONS[model] || model, input, 'vid-output', true);
+  document.getElementById('vid-btn').disabled = false;
+}
+
+// ============ EDIT IMAGE ============
+async function editImage() {
+  clearError('edit-error');
+  const prompt = document.getElementById('edit-prompt').value.trim();
+  if (!uploadedImageBase64) return showError('edit-error', 'Please upload an image first.');
+  if (!prompt) return showError('edit-error', 'Please enter an edit prompt.');
+
+  document.getElementById('edit-btn').disabled = true;
+  showLoading('edit-output', 'PROCESSING IMAGE');
+
+  const mode = document.getElementById('edit-mode').value;
+  const strength = parseFloat(document.getElementById('edit-strength').value);
+
+  // img2img using SDXL
+  const input = {
+    prompt,
+    image: `data:image/jpeg;base64,${uploadedImageBase64}`,
+    prompt_strength: strength,
+    num_inference_steps: 30,
+    guidance_scale: 7.5,
+  };
+
+  // Use SDXL img2img version
+  const version = 'da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf';
+  await runReplicate(version, input, 'edit-output', false);
+  document.getElementById('edit-btn').disabled = false;
+}
+
+// ============ EDIT VIDEO ============
+async function editVideo() {
+  clearError('vedit-error');
+  const prompt = document.getElementById('vedit-prompt').value.trim();
+  if (!prompt) return showError('vedit-error', 'Please enter an edit prompt.');
+
+  document.getElementById('vedit-btn').disabled = true;
+  showLoading('vedit-output', 'PROCESSING VIDEO');
+
+  // AnimateDiff for style transfer
+  const input = {
+    prompt,
+    num_frames: 16,
+    fps: 8,
+    num_inference_steps: 25,
+  };
+
+  await runReplicate(MODEL_VERSIONS['lucataco/animate-diff'], input, 'vedit-output', true);
+  document.getElementById('vedit-btn').disabled = false;
+}
+
+// ============ FILE UPLOADS ============
+function handleEditUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedImageBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('edit-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.querySelector('#edit-upload-zone .upload-icon').style.display = 'none';
+    document.querySelector('#edit-upload-zone .upload-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleVidImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedVidImageBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('vid-seed-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleVideoEditUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  uploadedVideoFile = file;
+  const url = URL.createObjectURL(file);
+  const preview = document.getElementById('vedit-preview');
+  preview.src = url;
+  preview.style.display = 'block';
+  document.querySelector('#vedit-upload-zone .upload-icon').style.display = 'none';
+  document.querySelector('#vedit-upload-zone .upload-text').style.display = 'none';
+}
+
+// Drag over effects
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+});
+
+// Update model info
+document.getElementById('img-model').addEventListener('change', function() {
+  const info = {
+    'stability-ai/sdxl': 'High quality, versatile image generation',
+    'black-forest-labs/flux-schnell': 'Ultra-fast, great for quick iterations',
+    'black-forest-labs/flux-dev': 'High fidelity, slower but more detailed',
+    'stability-ai/stable-diffusion-3': 'Latest SD3 with improved composition',
+  };
+  document.getElementById('img-model-info').textContent = info[this.value] || '';
+});
+</script>
+</body>
+</html>
