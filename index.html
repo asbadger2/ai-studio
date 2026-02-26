@@ -915,7 +915,7 @@ const HF_MODELS = {
   'sd3':           'stabilityai/stable-diffusion-3-medium-diffusers',
 };
 
-async function callHuggingFace(modelKey, payload, outputId) {
+async async function callHuggingFace(modelKey, payload, outputId) {
   const model = HF_MODELS[modelKey] || HF_MODELS['flux-schnell'];
   const url = `https://api-inference.huggingface.co/models/${model}`;
   try {
@@ -966,7 +966,7 @@ async function generateImage() {
   document.getElementById('img-btn').disabled = true;
   showLoading('img-output', 'INITIALIZING...');
 
-  let input = { prompt, width: w, height: h, num_inference_steps: steps, guidance_scale: guidance } };
+  const payload = { inputs: prompt, parameters: { width: w, height: h, num_inference_steps: steps, guidance_scale: guidance } };
   if (!model.includes('flux') && negative) payload.parameters.negative_prompt = negative;
 
   await callHuggingFace(model, payload, 'img-output');
