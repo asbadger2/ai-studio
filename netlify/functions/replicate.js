@@ -24,14 +24,13 @@ exports.handler = async (event) => {
   }
 
   const { path, method, body } = parsed;
-
   const url = `https://api.replicate.com/v1${path}`;
 
   try {
     const fetchOptions = {
       method: method || 'GET',
       headers: {
-        'Authorization': `Token ${API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
     };
